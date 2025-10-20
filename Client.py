@@ -91,7 +91,7 @@ def handle_connection(conn):
 
 def connect_to_server():
     try:
-        server_ip = "192.168.1.100"  # Replace with your server's IP
+        server_ip = "127.0.0.1"  # Change to your server's IP if remote
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         conn.connect((server_ip, 9999))
         print(f"Connected to server at {server_ip}")
