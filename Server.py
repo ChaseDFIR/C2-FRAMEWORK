@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext
 from tkinterdnd2 import TkinterDnD, DND_FILES
 import socket
+import threading
 import os
 
 class CommandListenerGUI:
@@ -16,7 +17,6 @@ class CommandListenerGUI:
         self.command_entry = tk.Entry(root, width=60)
         self.command_entry.grid(row=1, column=0, padx=10, pady=5)
         tk.Button(root, text="Send Command", command=self.send_command).grid(row=1, column=1)
-        tk.Button(root, text="Wait for Client", command=self.wait_for_client).grid(row=1, column=2)
 
         self.tree = ttk.Treeview(root)
         self.tree.grid(row=2, column=0, columnspan=3, padx=10, pady=5, sticky="nsew")
@@ -29,6 +29,8 @@ class CommandListenerGUI:
 
         self.root.grid_rowconfigure(2, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
+
+        threading.Thread(target=self.wait_for_client, daemon=True).start()
 
     def log(self, message):
         self.output_area.insert(tk.END, message + "\n")
@@ -43,7 +45,8 @@ class CommandListenerGUI:
             self.client_socket, addr = listener.accept()
             self.log(f"Client connected from {addr}")
             self.tree.delete(*self.tree.get_children())
-            self.tree.insert("", "end", "/root.", text=". (root)", open=False)
+            self.tree.insert("", "end", "/root.", text="📁 . (root)", open=False)
+            self.tree.insert("/root.", "end", text="Loading...")
         except Exception as e:
             self.log(f"Listener error: {e}")
 
@@ -69,14 +72,16 @@ class CommandListenerGUI:
         for item in response.splitlines():
             clean_item = item.rstrip("/")
             full_path = os.path.join(path, clean_item)
-            is_folder = item.endswith("/")
-            label = f"{item}"
-            self.tree.insert(node, "end", f"/root{full_path}", text=label, open=False)
+            child_id = f"/root{full_path}"
+            icon = "📁" if item.endswith("/") else "📄"
+            self.tree.insert(node, "end", child_id, text=f"{icon} {clean_item}", open=False)
+            if item.endswith("/"):
+                self.tree.insert(child_id, "end", text="Loading...")
 
     def handle_double_click(self, event):
         node = self.tree.focus()
         label = self.tree.item(node)["text"]
-        if label.endswith("/"):
+        if label.startswith("📁"):
             self.expand_node(None)
         else:
             self.download_file(node)
