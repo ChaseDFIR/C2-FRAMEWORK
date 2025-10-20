@@ -1,11 +1,10 @@
 import tkinter as tk
-from tkinter import ttk, filedialog, scrolledtext
-from tkinterdnd2 import DND_FILES, TkinterDnD
+from tkinter import ttk, scrolledtext
+from tkinterdnd2 import TkinterDnD, DND_FILES
 import socket
-import threading
 import os
 
-class CommandSenderGUI:
+class CommandListenerGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Remote Command & File Manager")
@@ -17,7 +16,7 @@ class CommandSenderGUI:
         self.command_entry = tk.Entry(root, width=60)
         self.command_entry.grid(row=1, column=0, padx=10, pady=5)
         tk.Button(root, text="Send Command", command=self.send_command).grid(row=1, column=1)
-        tk.Button(root, text="Connect to Client", command=self.connect_to_client).grid(row=1, column=2)
+        tk.Button(root, text="Wait for Client", command=self.wait_for_client).grid(row=1, column=2)
 
         self.tree = ttk.Treeview(root)
         self.tree.grid(row=2, column=0, columnspan=3, padx=10, pady=5, sticky="nsew")
@@ -35,15 +34,18 @@ class CommandSenderGUI:
         self.output_area.insert(tk.END, message + "\n")
         self.output_area.see(tk.END)
 
-    def connect_to_client(self):
+    def wait_for_client(self):
         try:
-            self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.client_socket.connect(("127.0.0.1", 9999))  # Change IP for remote
-            self.log("Connected to remote client.")
+            listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            listener.bind(("0.0.0.0", 9999))
+            listener.listen(1)
+            self.log("Waiting for client to connect...")
+            self.client_socket, addr = listener.accept()
+            self.log(f"Client connected from {addr}")
             self.tree.delete(*self.tree.get_children())
-            self.tree.insert("", "end", "/root.", text="📁 .", open=False)
+            self.tree.insert("", "end", "/root.", text=". (root)", open=False)
         except Exception as e:
-            self.log(f"Connection error: {e}")
+            self.log(f"Listener error: {e}")
 
     def send_command(self):
         cmd = self.command_entry.get().strip()
@@ -67,15 +69,16 @@ class CommandSenderGUI:
         for item in response.splitlines():
             clean_item = item.rstrip("/")
             full_path = os.path.join(path, clean_item)
-            icon = "📁" if item.endswith("/") else "📄"
-            self.tree.insert(node, "end", f"/root{full_path}", text=f"{icon} {item}", open=False)
+            is_folder = item.endswith("/")
+            label = f"{item}"
+            self.tree.insert(node, "end", f"/root{full_path}", text=label, open=False)
 
     def handle_double_click(self, event):
         node = self.tree.focus()
         label = self.tree.item(node)["text"]
-        if label.startswith("📁"):
+        if label.endswith("/"):
             self.expand_node(None)
-        elif label.startswith("📄"):
+        else:
             self.download_file(node)
 
     def download_file(self, node):
@@ -117,5 +120,5 @@ class CommandSenderGUI:
             self.log(f"Upload error: {e}")
 
 root = TkinterDnD.Tk()
-app = CommandSenderGUI(root)
+app = CommandListenerGUI(root)
 root.mainloop()
