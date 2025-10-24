@@ -1,6 +1,12 @@
 # C2-FRAMEWORK
 Remote Command &amp; File Manager is a Python-based tool that lets you control a remote Unix-based system through a simple graphical interface. It’s designed to help you send shell commands, browse the client’s file system, and transfer files between machines — all from one place.
 
+# INSTALL DEPENDENCY
+pip install tkinterdnd2
+# IF TKINTER MISSING
+sudo apt install python3-tk
+
+
 # CHANGE THE IP IN THE CLIENT.PY
 server_ip = "127.0.0.1"  # Change to your server's IP if remote
 
@@ -8,7 +14,3 @@ server_ip = "127.0.0.1"  # Change to your server's IP if remote
 python3 remote_executor.py
 # RUN THE SERVER
 python3 server.py
-# INSTALL DEPENDENCY
-pip install tkinterdnd2
-# IF TKINTER MISSING
-sudo apt install python3-tk
